@@ -3,6 +3,27 @@
 # Edit these to match what you're looking for
 # =============================================
 
+import os
+from dotenv import load_dotenv
+
+# This line reads your secret .env file
+# and makes its values available to Python
+load_dotenv()
+
+# ---- PRIVATE SETTINGS (from .env file) ----
+
+# Your email address
+YOUR_EMAIL = os.getenv("YOUR_EMAIL", "your.email@gmail.com")
+
+# Your email password
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
+
+# Your name
+YOUR_NAME = os.getenv("YOUR_NAME", "there")
+
+
+# ---- JOB SEARCH CRITERIA (safe to share) ----
+
 # Job titles or keywords you want to search for
 KEYWORDS = [
     "Data Analyst",
