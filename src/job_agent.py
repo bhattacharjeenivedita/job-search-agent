@@ -215,6 +215,75 @@ def search_stepstone(keyword, location):
 # STEP 2 — SEARCH ALL PORTALS
 # =============================================
 
+# =============================================
+# SEARCH ARBEITNOW
+# Free official API — no key needed!
+# Specialises in German & European jobs
+# =============================================
+
+def search_arbeitnow(keyword, location):
+    """
+    Searches Arbeitnow's free official API for
+    jobs matching the given keyword and location.
+    Returns clean structured data including
+    full job descriptions for better skill matching.
+    """
+
+    url = "https://www.arbeitnow.com/api/job-board-api"
+
+    params = {
+        "q": keyword,
+        "location": location,
+    }
+
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "JobSearchAgent/1.0",
+    }
+
+    jobs = []
+
+    try:
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+
+        if response.status_code != 200:
+            print(f"  Arbeitnow: unexpected status {response.status_code}")
+            return jobs
+
+        data = response.json()
+        listings = data.get("data", [])
+
+        for item in listings:
+            title = item.get("title", "").strip()
+            if not title:
+                continue
+
+            company = item.get("company_name", "See listing").strip()
+            job_location = item.get("location", location).strip()
+            job_url = item.get("url", "").strip()
+            description = item.get("description", "").strip()
+            remote = item.get("remote", False)
+
+            # If remote flag is set, note it in location
+            if remote and "remote" not in job_location.lower():
+                job_location = f"{job_location} (Remote)"
+
+            jobs.append({
+                "title": title,
+                "company": company,
+                "location": job_location,
+                "portal": "Arbeitnow",
+                "keyword": keyword,
+                "link": job_url,
+                "description": description,
+                "date_found": datetime.now().strftime("%Y-%m-%d")
+            })
+
+    except Exception as e:
+        print(f"  Could not reach Arbeitnow: {e}")
+
+    return jobs
+
 def run_search():
     """
     Loops through all your keywords and locations
@@ -235,6 +304,11 @@ def run_search():
             if "stepstone" in PORTALS:
                 results = search_stepstone(keyword, location)
                 print(f"  StepStone: {len(results)} jobs found")
+                all_jobs.extend(results)
+                
+            if "arbeitnow" in PORTALS:
+                results = search_arbeitnow(keyword, location)
+                print(f"  Arbeitnow: {len(results)} jobs found")
                 all_jobs.extend(results)
 
     print(f"\n  Total jobs found: {len(all_jobs)}")

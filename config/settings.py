@@ -44,12 +44,36 @@ LANGUAGES = [
     
 ]
 
-# Job portals to search
+# Your skills — add or remove anytime!
+# The agent will score jobs higher if they mention these
+SKILLS = [
+    # Programming
+    "Python",
+    "R",
+    "SQL",
+    # Data & Analytics
+    "Data Analysis",
+    "Data Analytics",
+    "Power BI",
+    "Excel",
+    "Qlik",
+    "QlikView",
+    "QlikSense",
+    # General
+    "Reporting",
+    "Dashboard",
+    "Visualization",
+]
+
 PORTALS = [
-    "linkedin",
     "stepstone",
+    "arbeitnow",
+    "linkedin",
     "xing",
 ]
+
+# How many top jobs to show per portal in the email
+TOP_JOBS_PER_PORTAL = 5
 
 # Your email address (where the daily digest gets sent)
 YOUR_EMAIL = "bhattacharje.nivedita@gmail.com"
