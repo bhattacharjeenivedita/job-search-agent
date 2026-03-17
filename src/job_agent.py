@@ -27,8 +27,10 @@ def search_stepstone(keyword, location):
     Returns a list of job listings found.
     """
 
-    url = "https://www.stepstone.de/jobs/suche"
-    
+    # Use StepStone's English-specific subdomain
+    # This targets international/English job listings only
+    url = "https://www.stepstone.de/en/jobs/suche"
+
     params = {
         "q": keyword,
         "where": location,
@@ -284,6 +286,94 @@ def search_arbeitnow(keyword, location):
 
     return jobs
 
+# =============================================
+# LANGUAGE FILTER
+# Detects job language and rejects:
+# 1. Jobs written in German
+# 2. Jobs that require German as a skill
+# =============================================
+
+from langdetect import detect, LangDetectException
+
+def is_english_friendly(job):
+    """
+    Returns True only if:
+    - The job is written in English
+    - AND does not require German language skills
+    """
+
+    title = job.get("title", "")
+    description = job.get("description", "").lower()
+    title_lower = title.lower()
+
+    # ---- CHECK 1: Arbeitnow language field ----
+    # Most reliable signal — trust it completely
+    language = job.get("language", "")
+    if language:
+        if language.lower() != "en":
+            return False
+        # Even if marked English, still check for German requirement below
+
+    # ---- CHECK 2: Detect language of description ----
+    # Use langdetect to identify the actual language
+    if description and len(description) > 50:
+        try:
+            detected = detect(description)
+            if detected != "en":
+                return False
+        except LangDetectException:
+            # If detection fails, fall through to other checks
+            pass
+
+    # ---- CHECK 3: Detect language of title ----
+    # Catches German-only titles with no description
+    if title and len(title) > 5:
+        try:
+            detected = detect(title)
+            if detected == "de":
+                return False
+        except LangDetectException:
+            pass
+
+    # ---- CHECK 4: Check if German is REQUIRED as a skill ----
+    # These phrases mean German language is a hard requirement
+    german_required_phrases = [
+        # Direct German language requirements
+        "german language required",
+        "german is required",
+        "german language skills required",
+        "fluent in german",
+        "fluent german",
+        "business german",
+        "native german",
+        "german speaker",
+        "german proficiency",
+        "c1 german",
+        "c2 german",
+        "b2 german",
+
+        # German phrases meaning German is required
+        "deutschkenntnisse",
+        "deutsch- und englisch",
+        "englisch- und deutschkenntnisse",
+        "sehr gute deutschkenntnisse",
+        "gute deutschkenntnisse",
+        "fließende deutschkenntnisse",
+        "verhandlungssicheres deutsch",
+        "deutsch auf muttersprachlichem niveau",
+        "deutsch als arbeitssprache",
+        "deutsche sprachkenntnisse",
+        "deutsch in wort und schrift",
+        "gutes deutsch",
+    ]
+
+    for phrase in german_required_phrases:
+        if phrase in description or phrase in title_lower:
+            return False
+
+    return True
+
+
 def run_search():
     """
     Loops through all your keywords and locations
@@ -303,12 +393,14 @@ def run_search():
 
             if "stepstone" in PORTALS:
                 results = search_stepstone(keyword, location)
-                print(f"  StepStone: {len(results)} jobs found")
+                results = [j for j in results if is_english_friendly(j)]
+                print(f"  StepStone: {len(results)} English-friendly jobs found")
                 all_jobs.extend(results)
                 
             if "arbeitnow" in PORTALS:
                 results = search_arbeitnow(keyword, location)
-                print(f"  Arbeitnow: {len(results)} jobs found")
+                results = [j for j in results if is_english_friendly(j)]
+                print(f"  Arbeitnow: {len(results)} English-friendly jobs found")
                 all_jobs.extend(results)
 
     print(f"\n  Total jobs found: {len(all_jobs)}")
