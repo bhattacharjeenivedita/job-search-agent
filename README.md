@@ -176,7 +176,7 @@ Only jobs scoring 60+ make it into your daily email.
 
 I'm a data & analytics professional currently open to new opportunities in Germany. This project reflects my approach to problem-solving — when I face a challenge, I build a solution.
 
-Feel free to connect with me on [LinkedIn](https://linkedin.com/in/YOUR-PROFILE) or reach out via GitHub!
+Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/niveditabjee11/) or reach out via GitHub!
 
 ---
 
