@@ -83,18 +83,49 @@ def build_email_html(jobs):
         # Job rows
         for i, job in enumerate(portal_jobs):
             bg = "#ffffff" if i % 2 == 0 else "#f8fafc"
+
+            # AI score badge colour
+            ai_score = job.get("ai_score", 0)
+            match_level = job.get("match_level", "")
+            why_good = job.get("why_good", "")
+            why_not = job.get("why_not", "")
+            skills = ", ".join(job.get("key_matching_skills", []))
+
+            if ai_score >= 85:
+                badge_bg = "#dcfce7"
+                badge_color = "#166534"
+            elif ai_score >= 70:
+                badge_bg = "#dbeafe"
+                badge_color = "#1e40af"
+            elif ai_score >= 50:
+                badge_bg = "#fef9c3"
+                badge_color = "#854d0e"
+            else:
+                badge_bg = "#fee2e2"
+                badge_color = "#991b1b"
+
             job_rows_html += f"""
             <tr style="background-color: {bg};">
-                <td style="padding: 10px 16px; font-size: 14px; color: #1a202c; border-bottom: 1px solid #e2e8f0;">
-                    <a href="{job['link']}" style="color: #1a56db; text-decoration: none; font-weight: 500;">
-                        {job['title']}
-                    </a>
-                </td>
-                <td style="padding: 10px 16px; font-size: 13px; color: #4a5568; border-bottom: 1px solid #e2e8f0;">
-                    {job['company']}
-                </td>
-                <td style="padding: 10px 16px; font-size: 13px; color: #4a5568; border-bottom: 1px solid #e2e8f0;">
-                    {job['location']}
+                <td colspan="3" style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                        <div style="flex: 1;">
+                            <a href="{job['link']}" style="color: #1a56db; text-decoration: none; font-size: 14px; font-weight: 600;">
+                                {job['title']}
+                            </a>
+                            <div style="font-size: 13px; color: #4a5568; margin-top: 2px;">
+                                {job['company']} · {job['location']}
+                            </div>
+                            {f'<div style="font-size: 12px; color: #22543d; margin-top: 4px;">✓ {why_good}</div>' if why_good else ''}
+                            {f'<div style="font-size: 12px; color: #744210; margin-top: 2px;">⚠ {why_not}</div>' if why_not else ''}
+                            {f'<div style="font-size: 12px; color: #2b6cb0; margin-top: 2px;">🔧 {skills}</div>' if skills else ''}
+                        </div>
+                        <div style="text-align: center; min-width: 70px;">
+                            <div style="background: {badge_bg}; color: {badge_color}; border-radius: 8px; padding: 4px 8px; font-size: 18px; font-weight: 700;">
+                                {ai_score}
+                            </div>
+                            <div style="font-size: 10px; color: {badge_color}; margin-top: 2px;">{match_level}</div>
+                        </div>
+                    </div>
                 </td>
             </tr>
             """

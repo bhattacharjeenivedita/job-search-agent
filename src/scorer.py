@@ -126,7 +126,7 @@ def score_job(job):
     return score, reasons
 
 
-def rank_and_filter_jobs(jobs, top_n=5):
+def rank_and_filter_jobs(jobs, top_n=30):
     """
     Scores all jobs, sorts them by score,
     and returns the top N per portal.

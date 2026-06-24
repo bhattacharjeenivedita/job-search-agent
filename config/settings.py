@@ -6,46 +6,63 @@
 import os
 from dotenv import load_dotenv
 
-# This line reads your secret .env file
-# and makes its values available to Python
+# Reads your secret .env file
 load_dotenv()
 
 # ---- PRIVATE SETTINGS (from .env file) ----
 
-# Your email address
 YOUR_EMAIL = os.getenv("YOUR_EMAIL", "your.email@gmail.com")
-
-# Your email password
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "")
-
-# Your name
 YOUR_NAME = os.getenv("YOUR_NAME", "there")
+CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY", "")
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
 
+# ---- JOB SEARCH CRITERIA ----
 
-# ---- JOB SEARCH CRITERIA (safe to share) ----
-
-# Job titles or keywords you want to search for
+# Main keywords — used by StepStone and Arbeitnow
 KEYWORDS = [
     "Data Analyst",
-    "Business Intelligence",
-    "Business Analyst",
+    "Senior Data Analyst",
+    "Business Intelligence Analyst",
+    "BI Analyst",
+    "BI Developer",
+    "Power BI Developer",
+    "Reporting Analyst",
+    "Analytics Engineer",
+    "Data Engineer",
+    "SQL Analyst",
+    "SQL Developer",
 ]
 
-# Locations you want to work in
+# LinkedIn specific — kept small to preserve
+# RapidAPI free tier (100 calls/month)
+LINKEDIN_KEYWORDS = [
+    "Data Analyst",
+    "BI Analyst",
+    "Power BI Developer",
+]
+
+# Main locations — used by StepStone and Arbeitnow
 LOCATIONS = [
     "Stuttgart",
-    "Baden Württemberg",
+    "Baden-Württemberg",
+    "Remote",
+    "Germany",
+]
+
+# LinkedIn specific locations — kept small
+LINKEDIN_LOCATIONS = [
+    "Germany",
     "Remote",
 ]
 
 # Languages you want job listings in
 LANGUAGES = [
-    "English"
-    
+    "English",
+    "German",
 ]
 
 # Your skills — add or remove anytime!
-# The agent will score jobs higher if they mention these
 SKILLS = [
     # Programming
     "Python",
@@ -65,18 +82,15 @@ SKILLS = [
     "Visualization",
 ]
 
+# Job portals to search
 PORTALS = [
     "stepstone",
     "arbeitnow",
     "linkedin",
-    "xing",
 ]
 
-# How many top jobs to show per portal in the email
+# How many top jobs per portal in email
 TOP_JOBS_PER_PORTAL = 5
 
-# Your email address (where the daily digest gets sent)
-YOUR_EMAIL = "bhattacharje.nivedita@gmail.com"
-
-# What time to send the daily digest (24hr format)
+# Daily digest send time (24hr format)
 DIGEST_TIME = "08:00"
