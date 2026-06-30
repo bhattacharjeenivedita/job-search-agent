@@ -22,16 +22,9 @@ RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
 # Main keywords — used by StepStone and Arbeitnow
 KEYWORDS = [
     "Data Analyst",
-    "Senior Data Analyst",
-    "Business Intelligence Analyst",
     "BI Analyst",
     "BI Developer",
-    "Power BI Developer",
     "Reporting Analyst",
-    "Analytics Engineer",
-    "Data Engineer",
-    "SQL Analyst",
-    "SQL Developer",
 ]
 
 # LinkedIn specific — kept small to preserve
@@ -44,10 +37,8 @@ LINKEDIN_KEYWORDS = [
 
 # Main locations — used by StepStone and Arbeitnow
 LOCATIONS = [
-    "Stuttgart",
-    "Baden-Württemberg",
     "Remote",
-    "Germany",
+    "Germany"
 ]
 
 # LinkedIn specific locations — kept small
@@ -86,7 +77,6 @@ SKILLS = [
 PORTALS = [
     "stepstone",
     "arbeitnow",
-    "linkedin",
 ]
 
 # How many top jobs per portal in email
@@ -94,3 +84,4 @@ TOP_JOBS_PER_PORTAL = 5
 
 # Daily digest send time (24hr format)
 DIGEST_TIME = "08:00"
+

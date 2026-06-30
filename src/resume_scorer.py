@@ -7,15 +7,15 @@
 
 import anthropic
 import json
-import sys
 import os
+from datetime import datetime
+import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config.settings import CLAUDE_API_KEY
+
 
 # =============================================
 # RESUME SUMMARY
-# This is a structured summary of your resume
 # Claude uses this to score each job
 # =============================================
 
@@ -58,8 +58,10 @@ WORK EXPERIENCE:
    - Analysed large datasets to identify trends and support business decisions
 
 EDUCATION:
-- Post Graduate Diploma in Statistical Methods and Analytics — Indian Statistical Institute (2015)
-- Bachelor of Science in Mathematics — Dibrugarh University (2014)
+- Post Graduate Diploma in Statistical Methods and Analytics
+  Indian Statistical Institute (2015)
+- Bachelor of Science in Mathematics
+  Dibrugarh University (2014)
 
 SKILLS:
 Power BI, SQL, Python, RStudio, Qlik, Excel, Data Visualization,
@@ -85,7 +87,7 @@ ACHIEVEMENTS:
 
 IMPORTANT CONSTRAINTS:
 - German language level is only A2 (beginner) — currently improving to B1
-- Must REJECT or score very low any job requiring German at B2, C1 or C2 level
+- Must score very low any job requiring German at B2, C1 or C2 level
 - Jobs requiring "Deutschkenntnisse" at advanced level are NOT suitable
 - Jobs requiring "verhandlungssicheres Deutsch" are NOT suitable
 - Only suitable if job requires no German OR basic German (A1/A2) OR English only
@@ -98,9 +100,8 @@ IMPORTANT CONSTRAINTS:
 
 def score_job_with_claude(job):
     """
-    Sends a job listing + Nivedita's resume to Claude.
-    Claude returns a match score 0-100 and a plain-English
-    explanation of why the job is or isn't a good fit.
+    Sends a job listing and Nivedita's resume to Claude.
+    Returns a score 0-100 with plain-English reasoning.
     """
 
     from dotenv import load_dotenv
@@ -128,7 +129,8 @@ Portal: {portal}
 Job Description:
 {description[:2000]}
 
-Please evaluate how well this job matches the candidate's profile and respond with ONLY a JSON object in this exact format:
+Please evaluate how well this job matches the candidate's profile.
+Respond with ONLY a JSON object in this exact format, nothing else:
 {{
     "score": <number between 0 and 100>,
     "match_level": "<one of: Excellent Match, Good Match, Partial Match, Poor Match>",
@@ -138,30 +140,31 @@ Please evaluate how well this job matches the candidate's profile and respond wi
 }}
 
 Scoring guide:
-- 85-100: Excellent Match — strong skill overlap, right level, good location
+- 85-100: Excellent Match — strong skill overlap, right seniority, good location
 - 70-84: Good Match — most requirements met, minor gaps
-- 50-69: Partial Match — some relevant skills but significant gaps
+- 50-69: Partial Match — some relevant skills but notable gaps
 - 0-49: Poor Match — not suitable
 
-AUTOMATIC DISQUALIFIERS — score must be below 40 if any of these apply:
+AUTOMATIC DISQUALIFIERS — score must be below 40 if any apply:
 - Job requires German at B2, C1 or C2 level
 - Job requires "verhandlungssicheres Deutsch"
 - Job requires "Deutschkenntnisse" at advanced level
-- Job requires 5+ years of experience the candidate clearly doesn't have
+- Job is completely unrelated to data analytics or reporting
+- Job requires 5+ years of specialised experience the candidate clearly lacks
 
-Be honest and realistic. Only return the JSON, nothing else.
+Only return the JSON object. No extra text, no markdown backticks.
 """
 
     try:
         message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-haiku-4-5-20251001",
             max_tokens=500,
             messages=[{"role": "user", "content": prompt}]
         )
 
         response_text = message.content[0].text.strip()
 
-        # Clean up response in case Claude adds any extra text
+        # Clean up in case of any markdown formatting
         if "```json" in response_text:
             response_text = response_text.split("```json")[1].split("```")[0].strip()
         elif "```" in response_text:
@@ -185,12 +188,13 @@ Be honest and realistic. Only return the JSON, nothing else.
 # SCORE ALL JOBS AND RETURN TOP N
 # =============================================
 
-def score_all_jobs(jobs, top_n=5, min_score=60):
+def score_all_jobs(jobs, top_n=5, min_score=50):
     """
     1. Deduplicates jobs by link and title+company
     2. Scores each job using Claude AI
-    3. Filters out jobs below min_score
-    4. Returns top N per portal
+    3. Saves ALL scored jobs to a review file
+    4. Filters out jobs below min_score for email
+    5. Returns top N per portal for email digest
     """
 
     # ---- DEDUPLICATION ----
@@ -214,11 +218,12 @@ def score_all_jobs(jobs, top_n=5, min_score=60):
         unique_jobs.append(job)
 
     removed = len(jobs) - len(unique_jobs)
-    print(f"\n  Deduplication: removed {removed} duplicates — {len(unique_jobs)} unique jobs remaining")
-    print(f"  Scoring {len(unique_jobs)} jobs with Claude AI...")
-    print(f"  (Minimum score threshold: {min_score}/100)\n")
+    print(f"\n  Deduplication: removed {removed} duplicates")
+    print(f"  {len(unique_jobs)} unique jobs to score")
+    print(f"  Minimum score threshold: {min_score}/100\n")
 
-    scored_jobs = []
+    # ---- SCORE EACH JOB ----
+    all_scored = []
 
     for i, job in enumerate(unique_jobs, 1):
         title = job.get("title", "Unknown")
@@ -234,17 +239,32 @@ def score_all_jobs(jobs, top_n=5, min_score=60):
 
         print(f"      Score: {job['ai_score']}/100 — {job['match_level']}")
 
-        # Only keep jobs above minimum score
-        if job["ai_score"] >= min_score:
-            scored_jobs.append(job)
-        else:
-            print(f"      Excluded — below minimum score of {min_score}")
+        # Add to full list regardless of score
+        all_scored.append(job)
 
-    print(f"\n  {len(scored_jobs)} jobs passed the minimum score threshold")
+    # ---- SAVE ALL SCORED JOBS FOR MANUAL REVIEW ----
+    today = datetime.now().strftime("%Y-%m-%d")
+    os.makedirs("output", exist_ok=True)
+    review_file = f"output/all_scored_jobs_{today}.json"
+
+    with open(review_file, "w", encoding="utf-8") as f:
+        json.dump(
+            sorted(all_scored, key=lambda x: x["ai_score"], reverse=True),
+            f, ensure_ascii=False, indent=2
+        )
+    print(f"\n  All scored jobs saved for review: {review_file}")
+
+    # ---- FILTER FOR EMAIL ----
+    email_jobs = [j for j in all_scored if j["ai_score"] >= min_score]
+    print(f"  {len(email_jobs)} jobs scored {min_score}+ for email digest")
+
+    if not email_jobs:
+        print(f"  No jobs above {min_score} — try lowering min_score in run_agent.py")
+        return []
 
     # ---- GROUP BY PORTAL AND TAKE TOP N ----
     by_portal = {}
-    for job in scored_jobs:
+    for job in email_jobs:
         portal = job.get("portal", "Other")
         if portal not in by_portal:
             by_portal[portal] = []
@@ -252,14 +272,13 @@ def score_all_jobs(jobs, top_n=5, min_score=60):
 
     top_jobs = []
     for portal, portal_jobs in by_portal.items():
-        # Sort by score descending
         sorted_jobs = sorted(portal_jobs, key=lambda x: x["ai_score"], reverse=True)
         top = sorted_jobs[:top_n]
         top_jobs.extend(top)
-        print(f"  {portal}: kept top {len(top)} jobs (score ≥ {min_score})")
+        print(f"  {portal}: kept top {len(top)} jobs")
 
     # Final sort by score
     top_jobs.sort(key=lambda x: x["ai_score"], reverse=True)
-    print(f"\n  Final digest: {len(top_jobs)} jobs across {len(by_portal)} portal(s)")
+    print(f"\n  Final email digest: {len(top_jobs)} jobs")
 
     return top_jobs

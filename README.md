@@ -6,9 +6,15 @@ An AI-powered Python agent that searches multiple job portals every morning, sco
 
 ## 💡 Why I Built This
 
-As a data & analytics professional actively looking for new opportunities, I found myself spending too much time manually checking multiple job portals every day. So I built a tool to do it for me — one that not only finds jobs but intelligently ranks them against my actual resume.
+## 💡 Why I Built This
 
-This project is also my first step into Python development and GitHub — built entirely from scratch, with every line of code written and understood by me.
+As a data & analytics professional actively looking for new opportunities in Germany,
+I built this tool to automate my daily job search completely. It scrapes multiple
+job portals, scores every listing against my actual resume using Claude AI, and
+emails me a daily ranked digest — no manual effort required.
+
+This project also demonstrates my approach to problem-solving: when I face a
+challenge, I build a solution. It is my first independent Python and GitHub project.
 
 ---
 

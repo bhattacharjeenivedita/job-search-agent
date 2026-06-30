@@ -21,7 +21,7 @@ from src.deduplicator import filter_new_jobs
 from src.email_digest import load_todays_jobs, build_email_html, send_email
 from config.settings import TOP_JOBS_PER_PORTAL
 
-PRE_FILTER_LIMIT = 30
+PRE_FILTER_LIMIT = 15
 
 print("\n" + "="*50)
 print("  JOB SEARCH AGENT — DAILY RUN")
@@ -48,10 +48,14 @@ if not new_jobs:
 print(f"\n⚡ STEP 3: Pre-filtering top {PRE_FILTER_LIMIT} candidates...")
 pre_filtered = rank_and_filter_jobs(new_jobs, top_n=PRE_FILTER_LIMIT)
 print(f"  {len(pre_filtered)} jobs selected for Claude scoring")
+for j in pre_filtered[:3]:  # Show first 3 as sample
+    print(f"    Sample: {j.get('title','?')} | desc_len:{len(j.get('description',''))}")
+for j in pre_filtered:
+    print(f"    - [{j.get('score',0)}] {j['title']} | {j['portal']}")
 
 # Step 4: Score with Claude AI
 print(f"\n🤖 STEP 4: Scoring with Claude AI...")
-top_jobs = score_all_jobs(pre_filtered, top_n=TOP_JOBS_PER_PORTAL, min_score=60)
+top_jobs = score_all_jobs(pre_filtered, top_n=TOP_JOBS_PER_PORTAL, min_score=50)
 
 # Step 5: Display in terminal
 display_results(top_jobs)
