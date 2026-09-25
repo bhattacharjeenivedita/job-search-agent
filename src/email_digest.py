@@ -87,9 +87,11 @@ def build_email_html(jobs):
             # AI score badge colour
             ai_score = job.get("ai_score", 0)
             match_level = job.get("match_level", "")
+            score_source = job.get("score_source", "ai")
             why_good = job.get("why_good", "")
             why_not = job.get("why_not", "")
             skills = ", ".join(job.get("key_matching_skills", []))
+            source_note = "Fallback scored" if score_source == "fallback" else "AI scored"
 
             if ai_score >= 85:
                 badge_bg = "#dcfce7"
@@ -124,6 +126,7 @@ def build_email_html(jobs):
                                 {ai_score}
                             </div>
                             <div style="font-size: 10px; color: {badge_color}; margin-top: 2px;">{match_level}</div>
+                            <div style="font-size: 10px; color: #718096; margin-top: 2px;">{source_note}</div>
                         </div>
                     </div>
                 </td>

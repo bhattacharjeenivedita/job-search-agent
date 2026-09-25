@@ -1,60 +1,96 @@
-# 🤖 Job Search Agent
+I can give you the final README ready to paste. I can read your repo from here, but I can’t safely write back into `C:\Users\Public\Shared_Drive_HxHL\job_agent_claude\job-search-agent` from the current workspace permissions.
 
-An AI-powered Python agent that searches multiple job portals every morning, scores each listing against your resume using Claude AI, and emails you only the top matches — running fully autonomously in the cloud via GitHub Actions.
+Replace the full contents of [README.md](C:\Users\Public\Shared_Drive_HxHL\job_agent_claude\job-search-agent\README.md) with this:
 
----
+```md
+# Job Search Agent
 
-## 💡 Why I Built This
-
-As a data & analytics professional actively looking for new opportunities in Germany, I built this tool to automate my daily job search completely. It scrapes multiple job portals, scores every listing against my actual resume using Claude AI, and emails me a daily ranked digest — no manual effort required.
-
-This project also demonstrates my approach to problem-solving: when I face a challenge, I build a solution. It is my first independent Python and GitHub project, built entirely from scratch.
+A configurable Python job search agent that finds recent jobs, scores them against a candidate resume, and emails the best matches. It supports provider-based AI scoring, local profile configuration, and offline re-scoring from saved job files for low-cost testing.
 
 ---
 
-## ✨ Features
+## Why This Exists
 
-- 🔍 **Multi-portal search** — searches StepStone and Arbeitnow (LinkedIn via RapidAPI when free tier available)
-- 🤖 **AI-powered resume matching** — Claude AI scores every job against your actual resume
-- ⚡ **Smart pre-filtering** — keyword scorer shortlists top candidates before AI scoring (saves API costs)
-- 🔄 **Deduplication** — same job appearing across multiple searches is counted only once, and never seen twice across days
-- 📊 **Intelligent scoring** — scores based on recency, skill match, title match, location and company, plus Claude's deep resume analysis
-- 📬 **Daily email digest** — top matches per portal delivered to your inbox every morning
-- ☁️ **Fully cloud automated** — runs on GitHub Actions, works even when your laptop is off
-- 💾 **Saves results** — exports all found and scored jobs to dated JSON files for manual review
-- 🔒 **Secure by design** — sensitive credentials stored in `.env` locally and GitHub Secrets in the cloud, never exposed in the repository
+This project started as a personal job search automation tool and has gradually been refactored into a reusable MVP that other job seekers can configure for their own profile.
+
+The goal is simple:
+- search for fresh jobs
+- rank them quickly with rule-based filtering
+- score the best ones against a resume
+- send a compact daily digest with reasons
 
 ---
 
-## 🗂️ Project Structure
+## Features
 
-```
+- Configurable profile-based setup
+- Resume-based AI scoring
+- Local Ollama scoring support
+- Optional cloud scoring provider structure
+- Rule-based pre-filtering before AI scoring
+- Cross-run deduplication
+- Offline re-scoring from saved raw jobs
+- JSON and CSV review exports
+- Email digest of top matches
+- 24-hour freshness filtering for current live search flow
+
+---
+
+## Project Structure
+
+```text
 job-search-agent/
 │
 ├── .github/
 │   └── workflows/
-│       └── daily_job_search.yml   # GitHub Actions cloud automation
+│       └── daily_job_search.yml
 │
 ├── config/
-│   └── settings.py          # Your job search criteria, skills, portals
+│   └── settings.py
+│
+├── data/
+│   ├── profile.json
+│   ├── profile_template.json
+│   ├── resume_profile.txt
+│   └── resume_template.txt
+│
+├── output/
+│   ├── jobs_YYYY-MM-DD.json
+│   ├── all_scored_jobs_YYYY-MM-DD.json
+│   └── all_scored_jobs_YYYY-MM-DD.csv
 │
 ├── src/
-│   ├── job_agent.py         # Scrapes StepStone, Arbeitnow & LinkedIn
-│   ├── scorer.py            # Fast keyword pre-filter scorer
-│   ├── resume_scorer.py     # Claude AI resume matching scorer
-│   ├── deduplicator.py      # Cross-day deduplication
-│   └── email_digest.py      # Builds & sends the HTML email
+│   ├── job_agent.py
+│   ├── scorer.py
+│   ├── resume_scorer.py
+│   ├── deduplicator.py
+│   └── email_digest.py
 │
-├── run_agent.py             # Single command to run everything
-├── output/                  # Daily results saved here (local only)
-├── .env                     # Private credentials (local only)
-├── .gitignore                # Keeps secrets and clutter off GitHub
-└── README.md                # You are here!
+├── run_agent.py
+├── requirements.txt
+├── .env
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## Quick Setup
+
+A user only needs to update 3 files:
+
+1. `.env`
+   Stores secrets and runtime settings such as email credentials, API keys, and AI provider selection.
+
+2. `data/profile.json`
+   Stores target roles, target locations, skills, thresholds, and shortlist preferences.
+
+3. `data/resume_profile.txt`
+   Stores the candidate resume/profile text used by the scorer.
+
+---
+
+## Getting Started
 
 ### 1. Clone the repository
 
@@ -67,8 +103,7 @@ cd job-search-agent
 
 ```bash
 python -m venv venv
-venv\Scripts\activate        # Windows
-source venv/bin/activate     # Mac / Linux
+venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
@@ -77,134 +112,239 @@ source venv/bin/activate     # Mac / Linux
 pip install -r requirements.txt
 ```
 
-### 4. Set up your private credentials
+### 4. Create `.env`
 
-Create a `.env` file in the root folder:
+Example:
 
-```
-YOUR_EMAIL=your.email@gmail.com
+```env
+YOUR_EMAIL=your_email@example.com
 EMAIL_PASSWORD=your_gmail_app_password
 YOUR_NAME=Your Name
-CLAUDE_API_KEY=your_claude_api_key
+
+AI_PROVIDER=ollama
+OLLAMA_URL=http://localhost:11434/api/generate
+OLLAMA_MODEL=qwen3:8b
+
+CLAUDE_API_KEY=
+GEMINI_API_KEY=
 RAPIDAPI_KEY=your_rapidapi_key
 ```
 
-> ⚠️ Never share this file or commit it to GitHub.
+Notes:
+- Keep `.env` private
+- Do not commit `.env` to GitHub
+- `RAPIDAPI_KEY` is needed for the current LinkedIn search flow
+- `AI_PROVIDER=ollama` is the main local scoring path
 
-**Getting your credentials:**
-- **Gmail App Password**: Google Account → Security → 2-Step Verification → App Passwords
-- **Claude API Key**: https://console.anthropic.com → API Keys (add ~$5 credit)
-- **RapidAPI Key**: https://rapidapi.com → subscribe to LinkedIn Jobs Search (free tier)
+### 5. Create your profile
 
-### 5. Configure your search criteria
+Use `data/profile_template.json` as a starting point and save your real configuration as `data/profile.json`.
 
-Edit `config/settings.py` to set your keywords, locations, skills and portals:
+Example:
 
-```python
-KEYWORDS = ["Data Analyst", "BI Developer", "Power BI Developer"]
-LOCATIONS = ["Germany", "Remote"]
-SKILLS = ["Python", "SQL", "Power BI", "Data Analysis", "Excel"]
+```json
+{
+  "name": "Your Name",
+  "target_roles": [
+    "Senior Data Analyst",
+    "Data Analyst",
+    "BI Analyst"
+  ],
+  "target_locations": [
+    "India",
+    "Bangalore",
+    "Hyderabad",
+    "Remote"
+  ],
+  "skills": [
+    "SQL",
+    "Python",
+    "Power BI",
+    "Excel"
+  ],
+  "domain_preferences": [
+    "Banking",
+    "Business Intelligence",
+    "Analytics"
+  ],
+  "top_jobs_per_portal": 5,
+  "min_score": 50,
+  "pre_filter_limit": 5
+}
 ```
 
-### 6. Run locally
+### 6. Create your resume profile
+
+Use `data/resume_template.txt` as a starting point and save your real profile as `data/resume_profile.txt`.
+
+This file should contain:
+- summary
+- experience
+- skills
+- languages
+- achievements
+- important scoring constraints
+
+### 7. Set up Ollama
+
+Install Ollama, then run:
+
+```bash
+ollama pull qwen3:8b
+ollama serve
+```
+
+### 8. Run the agent
 
 ```bash
 python run_agent.py
 ```
 
-### 7. Deploy to the cloud (optional but recommended)
+---
 
-1. Add the same credentials from your `.env` as **GitHub Secrets**: repository → Settings → Secrets and variables → Actions
-2. Enable **"Read and write permissions"**: Settings → Actions → General → Workflow permissions
-3. The agent will then run automatically every morning at 8am German time via GitHub Actions — no laptop required!
+## Offline Re-Scoring Mode
+
+To avoid consuming live job-source quota during testing, the agent supports offline re-scoring.
+
+In `run_agent.py`, set:
+
+```python
+USE_SAVED_JOBS = True
+SAVED_JOBS_FILE = "output/jobs_2026-08-20.json"
+```
+
+This skips live search and reuses a previously saved raw jobs file.
+
+Use offline mode when you want to:
+- tune scoring prompts
+- test explanation quality
+- validate ranking changes
+- avoid spending additional LinkedIn API calls
 
 ---
 
-## 🤖 How the AI Scoring Works
+## Current Workflow
 
-The agent uses a two-stage scoring system to keep costs low while maintaining quality:
-
-**Stage 1 — Fast keyword pre-filter (free)**
-All jobs are scored instantly using keyword and skill matching. Only the top candidates proceed to Stage 2.
-
-**Stage 2 — Claude AI resume scoring (~$0.001 per job)**
-Claude reads each job description and compares it against your full resume. It returns:
-- A match score (0–100)
-- Match level (Excellent / Good / Partial / Poor)
-- Why it's a good fit
-- Any gaps or concerns
-- Key matching skills
-
-Jobs scoring above your minimum threshold make it into your daily email. All scored jobs (including lower scores) are saved to a review file for manual checking.
+1. Search recent jobs from the configured portal(s)
+2. Remove jobs already seen in previous runs
+3. Pre-filter candidates using rule-based scoring
+4. Score shortlisted jobs against the candidate profile using the selected AI provider
+5. Save scored results to JSON and CSV
+6. Email the top matches
 
 ---
 
-## 📊 Scoring Breakdown (Pre-filter Stage)
+## Output Files
 
-| Factor | Points | Description |
-|--------|--------|-------------|
-| Recency | 40 | Fresh listings scored highest |
-| Skill match | 25 | Skills found in title and description |
-| Title match | 20 | Keyword appears in job title |
-| Location | 10 | Matches your preferred locations |
-| Company | 5 | Well-known international companies |
+Each run can generate these files in the `output/` folder:
 
----
+- `jobs_YYYY-MM-DD.json`
+  Raw jobs collected from the search source
 
-## ☁️ Cloud Automation
+- `all_scored_jobs_YYYY-MM-DD.json`
+  Full scored results including score, reasoning, and matched skills
 
-This project runs on **GitHub Actions** — completely free for this usage level:
+- `all_scored_jobs_YYYY-MM-DD.csv`
+  Review-friendly export for manual inspection
 
-- Scheduled to run daily at 7:00 UTC (8:00/9:00 German time depending on DST)
-- Can also be triggered manually from the Actions tab
-- Commits the updated "seen jobs" list back to the repository automatically
-- No dependency on your laptop being on, awake, or connected
-
----
-
-## 🛣️ Roadmap
-
-- [x] StepStone scraper
-- [x] Arbeitnow free API integration
-- [x] LinkedIn via RapidAPI
-- [x] Claude AI resume scoring
-- [x] Smart pre-filtering to reduce API costs
-- [x] Deduplication within and across days
-- [x] Daily email digest with AI reasoning
-- [x] GitHub Actions cloud automation
-- [x] requirements.txt
-- [ ] Web dashboard to view and manage results
-- [ ] Deploy publicly so other job seekers can use it too
+The CSV includes:
+- title
+- company
+- location
+- portal
+- keyword
+- ai_score
+- match_level
+- why_good
+- why_not
+- key_matching_skills
+- link
+- date_found
 
 ---
 
-## 🛠️ Built With
+## Scoring Approach
 
-- [Python 3.13](https://www.python.org/)
-- [Requests](https://docs.python-requests.org/) — fetching web pages
-- [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/) — parsing HTML
-- [Anthropic Claude API](https://www.anthropic.com/) — AI resume matching
-- [langdetect](https://pypi.org/project/langdetect/) — language detection
-- [python-dotenv](https://pypi.org/project/python-dotenv/) — secure credential management
-- [RapidAPI](https://rapidapi.com/) — LinkedIn job search
-- [GitHub Actions](https://github.com/features/actions) — cloud automation & CI/CD
+The agent uses two scoring layers:
+
+### 1. Rule-Based Pre-Filter
+This stage quickly ranks jobs using:
+- title relevance
+- skill overlap
+- location match
+- domain preference
+- company recognition
+- penalties for weak-fit titles or missing descriptions
+
+### 2. AI Resume Scoring
+The shortlisted jobs are then scored against the resume/profile.
+
+The AI scorer returns:
+- `score`
+- `match_level`
+- `why_good`
+- `why_not`
+- `key_matching_skills`
+
+The current logic also:
+- cleans noisy job descriptions before scoring
+- adds fallback explanations when model output is incomplete
+- normalizes malformed model output
+- uses fallback scoring when AI scoring fails or times out
 
 ---
 
-## 👤 About Me
+## Current Limitations
 
-I'm a data & analytics professional currently open to new opportunities in Germany. This project reflects my approach to problem-solving — when I face a challenge, I build a solution.
-
-Feel free to connect with me on [LinkedIn](https://www.linkedin.com/in/nivedita-bhattacharjee) or reach out via GitHub!
-
----
-
-## ⚠️ Disclaimer
-
-This tool is for personal job search assistance only. Always review job listings yourself before applying. The AI scoring is a guide, not a guarantee of fit.
+- LinkedIn/RapidAPI usage is limited by quota
+- Local Ollama scoring can be slow on some machines
+- Some job descriptions may be incomplete depending on the source
+- AI scoring is assistive and should still be reviewed manually
+- India-focused job-source coverage is still limited and should be expanded over time
 
 ---
 
-## 📄 License
+## MVP Scope
 
-This project is open source and available under the [MIT License](LICENSE).
+This version is intended as a practical MVP:
+- configurable for different users
+- useful for daily job matching
+- testable offline without repeated API usage
+- suitable for small-scale user testing before turning it into a larger product
+
+---
+
+## Suggested Next Steps
+
+Likely next product improvements:
+- add more India-relevant job sources
+- improve local model reliability further
+- add a simple review UI/dashboard
+- add resume/profile upload flow
+- support hosted scoring providers more smoothly
+
+---
+
+## Built With
+
+- [Python](https://www.python.org/)
+- [Requests](https://docs.python-requests.org/)
+- [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/)
+- [Ollama](https://ollama.com/)
+- [python-dotenv](https://pypi.org/project/python-dotenv/)
+- [RapidAPI](https://rapidapi.com/)
+
+---
+
+## Disclaimer
+
+This tool is for job search assistance and experimentation. Always review job listings manually before applying. AI scoring is only a guide and may not always reflect the true quality or fit of a role.
+
+---
+
+## License
+
+This project is open source and available under the MIT License.
+```
+
+If you want, I can do one more pass after this and give you a **more product-facing README** version instead of this technical MVP version.
