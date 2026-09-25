@@ -1,0 +1,43 @@
+name: Daily India Job Agent
+
+on:
+  schedule:
+    - cron: '30 2 * * *'   # runs at 8:00 AM IST (2:30 AM UTC) every day
+  workflow_dispatch:         # allows manual trigger from GitHub Actions tab
+
+jobs:
+  run-job-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out your repo
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 4. Write credentials.json from GitHub Secret
+      - name: Write credentials.json
+        run: echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > src/credentials.json
+
+      # 5. Create .env file from GitHub Secrets
+      - name: Create .env file
+        run: |
+          echo "ADZUNA_APP_ID=${{ secrets.ADZUNA_APP_ID }}" >> .env
+          echo "ADZUNA_APP_KEY=${{ secrets.ADZUNA_APP_KEY }}" >> .env
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> .env
+          echo "SPREADSHEET_ID=${{ secrets.SPREADSHEET_ID }}" >> .env
+          echo "YOUR_EMAIL=${{ secrets.YOUR_EMAIL }}" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+
+      # 6. Run the agent
+      - name: Run job agent
+        run: python src/job_agent.py
