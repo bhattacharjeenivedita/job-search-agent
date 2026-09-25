@@ -1,350 +1,140 @@
-I can give you the final README ready to paste. I can read your repo from here, but I can’t safely write back into `C:\Users\Public\Shared_Drive_HxHL\job_agent_claude\job-search-agent` from the current workspace permissions.
+# 🎯 India Job Search Agent
 
-Replace the full contents of [README.md](C:\Users\Public\Shared_Drive_HxHL\job_agent_claude\job-search-agent\README.md) with this:
+An AI-powered daily job search agent for the Indian market. Fetches fresh listings, scores them against a resume using LLM, saves top matches to Google Sheets, and emails a daily digest — fully automated via GitHub Actions.
 
-```md
-# Job Search Agent
-
-A configurable Python job search agent that finds recent jobs, scores them against a candidate resume, and emails the best matches. It supports provider-based AI scoring, local profile configuration, and offline re-scoring from saved job files for low-cost testing.
+Built and maintained by [@bhattacharjeenivedita](https://github.com/bhattacharjeenivedita).
 
 ---
 
-## Why This Exists
+## How It Works
 
-This project started as a personal job search automation tool and has gradually been refactored into a reusable MVP that other job seekers can configure for their own profile.
+1. **Fetch** — pulls fresh job listings from Adzuna India API across multiple roles and cities
+2. **Deduplicate** — skips jobs already seen in previous runs (tracked via Google Sheets)
+3. **Pre-filter** — keyword-based filter removes irrelevant roles instantly (no API cost)
+4. **Score** — sends shortlisted jobs to Groq LLM, scored 1–10 against the candidate's resume
+5. **Save** — appends new top matches (score 6+) to Google Sheets, never overwrites
+6. **Email** — sends a formatted HTML digest with scores, match reasons, gaps, and job links
 
-The goal is simple:
-- search for fresh jobs
-- rank them quickly with rule-based filtering
-- score the best ones against a resume
-- send a compact daily digest with reasons
+Runs automatically every morning at **8:00 AM IST** via GitHub Actions.
 
 ---
 
-## Features
+## Agents
 
-- Configurable profile-based setup
-- Resume-based AI scoring
-- Local Ollama scoring support
-- Optional cloud scoring provider structure
-- Rule-based pre-filtering before AI scoring
-- Cross-run deduplication
-- Offline re-scoring from saved raw jobs
-- JSON and CSV review exports
-- Email digest of top matches
-- 24-hour freshness filtering for current live search flow
+### Nivedita — Data Analyst
+- **Roles:** Data Analyst, Senior Data Analyst
+- **Cities:** Bangalore, Pune, Hyderabad, Kolkata
+- **Script:** `src/job_agent.py`
+- **Sheet:** India Job Tracker
+
+### Sauvik — Functional Safety / ADAS
+- **Roles:** Functional Safety Engineer, FuSa Engineer, ADAS Safety Engineer, Systems Safety Engineer
+- **Cities:** Bangalore, Pune, Hyderabad, Chennai
+- **Script:** `src/job_agent_sauvik.py`
+- **Sheet:** Sauvik Job Tracker
 
 ---
 
 ## Project Structure
 
-```text
+```
 job-search-agent/
-│
 ├── .github/
 │   └── workflows/
-│       └── daily_job_search.yml
-│
-├── config/
-│   └── settings.py
-│
-├── data/
-│   ├── profile.json
-│   ├── profile_template.json
-│   ├── resume_profile.txt
-│   └── resume_template.txt
-│
-├── output/
-│   ├── jobs_YYYY-MM-DD.json
-│   ├── all_scored_jobs_YYYY-MM-DD.json
-│   └── all_scored_jobs_YYYY-MM-DD.csv
-│
+│       └── daily_job_agent.yml      # runs both agents daily at 8am IST
 ├── src/
-│   ├── job_agent.py
-│   ├── scorer.py
-│   ├── resume_scorer.py
-│   ├── deduplicator.py
-│   └── email_digest.py
-│
-├── run_agent.py
+│   ├── job_agent.py                 # Nivedita's agent
+│   ├── job_agent_sauvik.py          # Sauvik's agent
+│   ├── mock_and_email.py            # email preview / dry run tool
+│   └── test_sheets.py               # Google Sheets connection tester
 ├── requirements.txt
-├── .env
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## Quick Setup
+## Setup
 
-A user only needs to update 3 files:
+### Prerequisites
+- Python 3.11+
+- A Google Cloud project with Sheets + Drive APIs enabled
+- Free accounts on: [Adzuna Developer](https://developer.adzuna.com) · [Groq](https://console.groq.com) · Gmail with App Password
 
-1. `.env`
-   Stores secrets and runtime settings such as email credentials, API keys, and AI provider selection.
-
-2. `data/profile.json`
-   Stores target roles, target locations, skills, thresholds, and shortlist preferences.
-
-3. `data/resume_profile.txt`
-   Stores the candidate resume/profile text used by the scorer.
-
----
-
-## Getting Started
-
-### 1. Clone the repository
-
+### 1. Clone the repo
 ```bash
 git clone https://github.com/bhattacharjeenivedita/job-search-agent.git
 cd job-search-agent
-```
-
-### 2. Create and activate a virtual environment
-
-```bash
 python -m venv venv
-venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
+venv\Scripts\activate        # Windows
 pip install -r requirements.txt
 ```
 
-### 4. Create `.env`
-
-Example:
-
-```env
-YOUR_EMAIL=your_email@example.com
+### 2. Create `.env` in the project root
+```
+ADZUNA_APP_ID=your_adzuna_app_id
+ADZUNA_APP_KEY=your_adzuna_app_key
+GROQ_API_KEY=your_groq_api_key
+SPREADSHEET_ID=your_google_sheet_id_nivedita
+SPREADSHEET_ID_SAUVIK=your_google_sheet_id_sauvik
+YOUR_EMAIL=your_gmail@gmail.com
 EMAIL_PASSWORD=your_gmail_app_password
-YOUR_NAME=Your Name
-
-AI_PROVIDER=ollama
-OLLAMA_URL=http://localhost:11434/api/generate
-OLLAMA_MODEL=qwen3:8b
-
-CLAUDE_API_KEY=
-GEMINI_API_KEY=
-RAPIDAPI_KEY=your_rapidapi_key
 ```
 
-Notes:
-- Keep `.env` private
-- Do not commit `.env` to GitHub
-- `RAPIDAPI_KEY` is needed for the current LinkedIn search flow
-- `AI_PROVIDER=ollama` is the main local scoring path
+### 3. Add `credentials.json` to `src/`
+Download from Google Cloud Console → Service Account → Keys → JSON.
+Share both Google Sheets with the service account email as Editor.
 
-### 5. Create your profile
-
-Use `data/profile_template.json` as a starting point and save your real configuration as `data/profile.json`.
-
-Example:
-
-```json
-{
-  "name": "Your Name",
-  "target_roles": [
-    "Senior Data Analyst",
-    "Data Analyst",
-    "BI Analyst"
-  ],
-  "target_locations": [
-    "India",
-    "Bangalore",
-    "Hyderabad",
-    "Remote"
-  ],
-  "skills": [
-    "SQL",
-    "Python",
-    "Power BI",
-    "Excel"
-  ],
-  "domain_preferences": [
-    "Banking",
-    "Business Intelligence",
-    "Analytics"
-  ],
-  "top_jobs_per_portal": 5,
-  "min_score": 50,
-  "pre_filter_limit": 5
-}
-```
-
-### 6. Create your resume profile
-
-Use `data/resume_template.txt` as a starting point and save your real profile as `data/resume_profile.txt`.
-
-This file should contain:
-- summary
-- experience
-- skills
-- languages
-- achievements
-- important scoring constraints
-
-### 7. Set up Ollama
-
-Install Ollama, then run:
-
+### 4. Run locally
 ```bash
-ollama pull qwen3:8b
-ollama serve
-```
-
-### 8. Run the agent
-
-```bash
-python run_agent.py
+python src/job_agent.py           # Nivedita
+python src/job_agent_sauvik.py    # Sauvik
 ```
 
 ---
 
-## Offline Re-Scoring Mode
+## GitHub Actions (Automated Daily Run)
 
-To avoid consuming live job-source quota during testing, the agent supports offline re-scoring.
+The workflow runs both agents every day at 8:00 AM IST.
 
-In `run_agent.py`, set:
+Add these secrets under **Settings → Secrets and variables → Actions**:
 
-```python
-USE_SAVED_JOBS = True
-SAVED_JOBS_FILE = "output/jobs_2026-08-20.json"
-```
+| Secret | Description |
+|---|---|
+| `ADZUNA_APP_ID` | Adzuna API App ID |
+| `ADZUNA_APP_KEY` | Adzuna API App Key |
+| `GROQ_API_KEY` | Groq API key |
+| `SPREADSHEET_ID` | Nivedita's Google Sheet ID |
+| `SPREADSHEET_ID_SAUVIK` | Sauvik's Google Sheet ID |
+| `YOUR_EMAIL` | Gmail address |
+| `EMAIL_PASSWORD` | Gmail App Password |
+| `GOOGLE_CREDENTIALS_JSON` | Full contents of `credentials.json` |
 
-This skips live search and reuses a previously saved raw jobs file.
-
-Use offline mode when you want to:
-- tune scoring prompts
-- test explanation quality
-- validate ranking changes
-- avoid spending additional LinkedIn API calls
-
----
-
-## Current Workflow
-
-1. Search recent jobs from the configured portal(s)
-2. Remove jobs already seen in previous runs
-3. Pre-filter candidates using rule-based scoring
-4. Score shortlisted jobs against the candidate profile using the selected AI provider
-5. Save scored results to JSON and CSV
-6. Email the top matches
+Trigger manually anytime: **Actions → Daily India Job Agent → Run workflow**
 
 ---
 
-## Output Files
+## Tech Stack
 
-Each run can generate these files in the `output/` folder:
-
-- `jobs_YYYY-MM-DD.json`
-  Raw jobs collected from the search source
-
-- `all_scored_jobs_YYYY-MM-DD.json`
-  Full scored results including score, reasoning, and matched skills
-
-- `all_scored_jobs_YYYY-MM-DD.csv`
-  Review-friendly export for manual inspection
-
-The CSV includes:
-- title
-- company
-- location
-- portal
-- keyword
-- ai_score
-- match_level
-- why_good
-- why_not
-- key_matching_skills
-- link
-- date_found
+| Component | Tool |
+|---|---|
+| Job data | [Adzuna India API](https://developer.adzuna.com) (free) |
+| LLM scoring | [Groq](https://console.groq.com) — `openai/gpt-oss-120b` (free) |
+| Storage | Google Sheets via `gspread` |
+| Email | Gmail SMTP |
+| Scheduling | GitHub Actions (cron) |
+| Language | Python 3.11 |
 
 ---
 
-## Scoring Approach
+## Security
 
-The agent uses two scoring layers:
-
-### 1. Rule-Based Pre-Filter
-This stage quickly ranks jobs using:
-- title relevance
-- skill overlap
-- location match
-- domain preference
-- company recognition
-- penalties for weak-fit titles or missing descriptions
-
-### 2. AI Resume Scoring
-The shortlisted jobs are then scored against the resume/profile.
-
-The AI scorer returns:
-- `score`
-- `match_level`
-- `why_good`
-- `why_not`
-- `key_matching_skills`
-
-The current logic also:
-- cleans noisy job descriptions before scoring
-- adds fallback explanations when model output is incomplete
-- normalizes malformed model output
-- uses fallback scoring when AI scoring fails or times out
-
----
-
-## Current Limitations
-
-- LinkedIn/RapidAPI usage is limited by quota
-- Local Ollama scoring can be slow on some machines
-- Some job descriptions may be incomplete depending on the source
-- AI scoring is assistive and should still be reviewed manually
-- India-focused job-source coverage is still limited and should be expanded over time
-
----
-
-## MVP Scope
-
-This version is intended as a practical MVP:
-- configurable for different users
-- useful for daily job matching
-- testable offline without repeated API usage
-- suitable for small-scale user testing before turning it into a larger product
-
----
-
-## Suggested Next Steps
-
-Likely next product improvements:
-- add more India-relevant job sources
-- improve local model reliability further
-- add a simple review UI/dashboard
-- add resume/profile upload flow
-- support hosted scoring providers more smoothly
-
----
-
-## Built With
-
-- [Python](https://www.python.org/)
-- [Requests](https://docs.python-requests.org/)
-- [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/)
-- [Ollama](https://ollama.com/)
-- [python-dotenv](https://pypi.org/project/python-dotenv/)
-- [RapidAPI](https://rapidapi.com/)
+- `.env` and `credentials.json` are in `.gitignore` and never committed
+- All secrets stored as encrypted GitHub Secrets
+- `credentials.json` is written at runtime from a GitHub Secret and deleted after the job finishes
 
 ---
 
 ## Disclaimer
 
-This tool is for job search assistance and experimentation. Always review job listings manually before applying. AI scoring is only a guide and may not always reflect the true quality or fit of a role.
-
----
-
-## License
-
-This project is open source and available under the MIT License.
-```
-
-If you want, I can do one more pass after this and give you a **more product-facing README** version instead of this technical MVP version.
+This tool is for personal job search assistance. Always review listings manually before applying. AI scoring is a guide, not a guarantee of fit.
