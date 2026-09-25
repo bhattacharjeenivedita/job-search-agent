@@ -1,11 +1,9 @@
 """
-India Job Agent
+India Job Agent — Sauvik Chakraborty
+Functional Safety / ADAS / Systems Safety Engineer
 Uses: Adzuna India API (free) + Groq API (free) + Google Sheets (free) + Gmail
-- Appends new jobs only, never overwrites
-- Skips jobs already seen in previous runs
-- Sends daily email digest after each run
 """
- 
+
 import os
 import json
 import time
@@ -18,136 +16,176 @@ from google.oauth2.service_account import Credentials
 from groq import Groq
 from datetime import datetime
 from dotenv import load_dotenv
- 
+
 load_dotenv()
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
-# 1. API KEYS — from your .env file
+# 1. API KEYS — shared from .env file
 # ─────────────────────────────────────────────────────────────
- 
+
 ADZUNA_APP_ID     = os.getenv("ADZUNA_APP_ID", "")
 ADZUNA_APP_KEY    = os.getenv("ADZUNA_APP_KEY", "")
 GROQ_API_KEY      = os.getenv("GROQ_API_KEY", "")
 GOOGLE_CREDS_FILE = os.path.join(os.path.dirname(__file__), "credentials.json")
-SPREADSHEET_ID    = os.getenv("SPREADSHEET_ID", "")
+SPREADSHEET_ID    = os.getenv("SPREADSHEET_ID_SAUVIK", "")   # separate sheet for Sauvik
 GMAIL_ADDRESS     = os.getenv("YOUR_EMAIL", "")
 GMAIL_APP_PASS    = os.getenv("EMAIL_PASSWORD", "")
- 
-# Recipients — add more emails to this list anytime
+
+# Sauvik's email — add his own when ready
 EMAIL_TO = [
-    GMAIL_ADDRESS,
-    # "someone.else@gmail.com",
+    GMAIL_ADDRESS,            # Nivedita gets a copy for now
+    # "sauvik@gmail.com",     # uncomment when Sauvik wants his own digest
 ]
- 
+
+
 # ─────────────────────────────────────────────────────────────
-# 2. YOUR RESUME
+# 2. SAUVIK'S RESUME
 # ─────────────────────────────────────────────────────────────
 
-MMY_RESUME = """
-Name: Nivedita Bhattacharjee
-Location: Bangalore, India
-Notice Period: Short notice / immediately available
+MY_RESUME = """
+Name: Sauvik Chakraborty
+Location: Bangalore, India (relocating from Stuttgart, Germany)
+Notice Period: Available to join at short notice
+Languages: English (C1 Business Fluent), German (B1), Bengali (Native)
 
-Experience: 9+ years in data analytics across India and Germany
+Summary:
+Systems Safety Engineer with 13 years of experience in safety-critical E/E development
+on commercial vehicle and automotive platforms. Deep expertise in ADAS, active safety,
+radar/sensor-fusion systems, functional safety (ISO 26262, SOTIF/ISO 21448), and
+cybersecurity (ISO 21434). Proven track record leading HARA, safety concept development,
+FMEA/FMEDA, FTA, DFA, and safety case generation. Strong embedded software background
+(C/C++, MATLAB/Simulink) and vehicle network experience (CAN, CAN-FD, Automotive Ethernet).
+TÜV SÜD ISO 26262 Level I Certified.
 
-Recent Roles:
-- Independent AI & Data Projects (Apr 2026–Present): Python, REST APIs, LLM integration,
-  GitHub Actions, web scraping, job search automation, Looker Studio dashboards
-- Data Analyst, TOPdesk, Germany (Nov 2025–Mar 2026): SQL, Qlik Sense, Salesforce,
-  KPI frameworks, stakeholder reporting, Agile/JIRA
-- Data Engineer Intern, LexGraph, Berlin (Sep–Oct 2025): Python, BeautifulSoup,
-  Selenium, LLM-based document analysis, 50,000-page data pipeline
-- Lead Data Analyst, Deutsche Bank, Bangalore (Dec 2022–Jul 2024): SQL, Python, Hive,
-  data profiling, cross-source validation, LEI data, KYC, regulatory data,
-  legal entity data, automation (40% effort reduction), Deutsche Bank Excellence Forum
-- Senior Data Analyst, TCS, Bangalore (Oct 2018–Nov 2022): Power BI dashboards,
-  KYC, regulatory compliance, SQL, RStudio, stakeholder reporting
-- Data Analyst, TCS, Bangalore (Sep 2015–Sep 2018): SQL, MS Access, RStudio,
-  Excel, query optimisation, report automation
+Professional Experience:
 
-Domain Expertise: Banking, Financial Services, KYC, Regulatory Analytics,
-  Global Markets, Client & Legal Entity Data, Reference Data Management,
-  Data Governance, Data Quality, Reconciliation
+Systems Safety Engineer – Active Safety (Radar) Systems
+Daimler Truck AG, Stuttgart | May 2024 – Present
+- HARA: hazard identification, ASIL allocation, FTTI, safety concept definition for radar
+  and braking-related ADAS functions
+- Functional Safety Concept (FSC) and Technical Safety Concept (TSC) development including
+  safety mechanisms, safety architecture across HW/SW/communication interfaces
+- FMEA/FMEDA, FTA, Dependent Failure Analysis (DFA), Common-Cause Analysis
+- SOTIF analysis (ISO 21448): acceptance criteria, system-level simulations,
+  MATLAB/Simulink, Vector CANape/CANoe
+- ISO 21434 TARA (Threat Analysis & Risk Assessment) for powertrain control units
+- Safety audits, assessments, supplier data review and approval
+- IBM DOORS: full requirements traceability from safety goals to TSRs
+- HIL and prototype vehicle testing, V&V planning
+- DIA (Development Interface Agreement), Safety Plans, Safety Case evidence packages
+
+Systems Safety Engineer – ADAS
+ZF Friedrichshafen AG | March 2021 – March 2024
+- Technical Safety Concept for safety-critical ADAS subcomponents (full SW architecture)
+- HARA, FMEA, FTA, DFA across electrical, mechanical, thermal failure domains
+- Safety architecture for E/E, software and hardware subsystems; HSI for CAN/CAN-FD
+- System Safety Assessments (SSA) for radar, sensor-fusion, and braking systems
+- HIL/SIL/MIL validation strategies, vehicle network interface testing, road release approvals
+- ISO 21434 TARA participation
+- DIA, Safety Plans, all associated safety documentation
+
+Functional Safety Engineer – Battery Management Systems
+Samsung SDI Battery Systems GmbH, Graz, Austria | Oct 2019 – Feb 2021
+- Safety concepts and software safety architecture for BMS
+- Safety mechanism definition, HW/SW interface safety requirements
+- Safety analyses: fault effects, failure propagation across HW/SW/communication
+- Requirements traceability throughout development lifecycle
+- Verification plans for safety functions; confirmation reviews
+
+Sr. Embedded Software Engineer – Engine Control Systems
+Mercedes-Benz R&D, Bangalore | Nov 2016 – Aug 2019
+- Embedded software development for ECUs
+- HiL test automation, error analyses, root cause analysis
+- Onsite assignment at Mercedes Benz AG Stuttgart
+
+Embedded Software Engineer – Engine Control & Aftertreatment Systems
+Robert Bosch Engineering & Business Solutions, Bangalore | May 2013 – Oct 2016
+- MATLAB/Simulink model development, Stateflow, MIL/SIL/PIL testing
+- SDLC: requirements to functional testing, V&V
+- Fuel injection and aftertreatment systems
 
 Technical Skills:
-- SQL (Advanced), Python, Pandas, NumPy, R/RStudio, scikit-learn
-- Power BI, Qlik Sense, Looker Studio, Advanced Excel
-- Hive, ETL/Data Transformation, Data Warehousing, Oracle
-- REST APIs, BeautifulSoup, Selenium, Web Scraping
-- GitHub Actions, Git, Agile/JIRA, Process Automation
-- Generative AI, LLM Integration, Prompt Engineering
-- AWS (certified), Statistical Analysis, Data Mining, Machine Learning
-
-Soft Skills: Cross-functional collaboration, stakeholder management,
-  translating business questions to analytical solutions, audit & governance,
-  cost optimisation, team leadership
+- Functional Safety Standards: ISO 26262 (TÜV SÜD Level I Certified), ISO 21448 SOTIF,
+  ISO 21434 Cybersecurity, ISO 8800, ASPICE, AUTOSAR, MISRA
+- Safety Methods: HARA, FHA, SSA, FMEA, FMEDA, FTA, DFA, HAZOP, STPA, SOTIF analysis,
+  ASIL decomposition, SEooC, Safety Case, Safety Plan, DIA, FSC, TSC
+- ADAS & Active Safety: Radar (short & long range), sensor fusion, LKA, BSIS, MOIS,
+  UNECE R155, UNECE R159, SAE L2+/L3 functions, braking system interfaces
+- Vehicle Networks: CAN, CAN-FD, Automotive Ethernet, UDS Diagnostics
+- Tools: MATLAB/Simulink, Vector CANape/CANoe, IBM DOORS, PTC Integrity, INCA,
+  LabCAR, ASCET, CANalyzer
+- Programming: C/C++, Python, Stateflow
+- Requirements Management: DOORS, Codebeamer, traceability
 
 Education:
-- PG Diploma, Statistical Methods & Analytics — Indian Statistical Institute (2015)
-  Final project: ML credit-card default prediction in R, 88% accuracy
-- BSc Mathematics — Dibrugarh University (2014)
+Bachelor of Engineering – Electronics & Communications
+Rashtrasant Tukadoji Maharaj Nagpur University, India (2008–2012)
+Subjects: Embedded Systems, Microprocessors, DSP, Digital Systems, Mechatronics
 
-Certifications: DataCamp Data Analyst Associate, SQL Advanced (HackerRank),
-  KNIME Analytics, AI Fundamentals, AWS GenAI, NVIDIA Academy, McKinsey Forward
-
-Languages: English (C1), German (A2), Bengali (Native)
+Certifications: TÜV SÜD ISO 26262 Level I Certified
 """
 
 
 # ─────────────────────────────────────────────────────────────
-# 3. SEARCH SETTINGS
+# 3. SEARCH SETTINGS — Functional Safety / ADAS domain
 # ─────────────────────────────────────────────────────────────
- 
-ROLES  = ["data analyst", "senior data analyst"]
-CITIES = ["Bangalore", "Pune", "Hyderabad", "Kolkata"]
- 
-RESULTS_COUNT = 10      # jobs per role+city combo
-MIN_SCORE     = 6       # only save jobs scored 6+ to Sheets
-GROQ_DELAY    = 2       # seconds between Groq calls
- 
+
+ROLES = [
+    "functional safety engineer",
+    "FuSa engineer",
+    "ADAS safety engineer",
+    "systems safety engineer",
+    "functional safety architect",
+]
+
+CITIES = ["Bangalore", "Pune", "Hyderabad", "Chennai"]
+
+RESULTS_COUNT = 10
+MIN_SCORE     = 6
+GROQ_DELAY    = 2
+SHEET_NAME    = "Sauvik Job Tracker"
+
+# Domain-specific keywords for pre-filtering
 MUST_HAVE_ANY = [
-    "sql", "python", "power bi", "qlik", "data analyst", "analytics",
-    "banking", "financial", "dashboard", "etl", "hive", "data engineer",
-    "data quality", "kyc", "regulatory", "reconciliation", "reporting",
-    "looker", "tableau", "data governance", "reference data", "bi analyst",
-    "business intelligence", "rstudio", "statistical", "data science"
+    "functional safety", "fusa", "iso 26262", "iso26262", "adas",
+    "safety engineer", "sotif", "iso 21448", "hara", "fmea", "fta",
+    "asil", "safety architect", "safety concept", "automotive safety",
+    "radar", "sensor fusion", "embedded safety", "e/e", "ecu",
+    "iso 21434", "cybersecurity automotive", "aspice", "safety case",
+    "autonomous driving", "advanced driver", "active safety"
 ]
- 
+
 REJECT_IF_ANY = [
-    "java developer", "devops", "react", "angular", "sap basis",
-    "oracle dba", "network engineer", "hardware", "civil engineer",
-    "mechanical", "sales executive", "marketing manager", "graphic designer",
-    "content writer", "hr executive"
+    "food safety", "fire safety", "health safety", "safety officer",
+    "safety manager construction", "occupational safety", "workplace safety",
+    "process safety", "chemical safety", "nuclear safety", "data analyst",
+    "software developer", "web developer", "react", "angular", "java developer",
+    "devops", "network engineer", "civil engineer", "mechanical design"
 ]
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # GOOGLE SHEETS HELPERS
 # ─────────────────────────────────────────────────────────────
- 
+
 HEADERS = [
     "Score", "Title", "Company", "Location",
     "Salary", "Summary", "Why It Matches", "Gaps", "Date Found", "Job URL"
 ]
- 
+
+
 def get_sheet():
-    """Connect to Google Sheet and return the worksheet."""
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive",
     ]
     creds  = Credentials.from_service_account_file(GOOGLE_CREDS_FILE, scopes=scopes)
     client = gspread.authorize(creds)
-    spreadsheet = client.open_by_key(SPREADSHEET_ID)
-    return spreadsheet.sheet1
- 
- 
+    return client.open_by_key(SPREADSHEET_ID).sheet1
+
+
 def get_seen_job_keys(sheet) -> set:
-    """
-    Read existing Title + Company combinations from the sheet.
-    More stable than URL-based dedup since URLs can change.
-    """
     try:
         all_rows = sheet.get_all_values()
         if len(all_rows) <= 1:
@@ -164,18 +202,14 @@ def get_seen_job_keys(sheet) -> set:
     except Exception as e:
         print(f"  ⚠️  Could not read existing jobs: {e}")
         return set()
- 
- 
+
+
 def ensure_headers(sheet):
-    """Add headers if the sheet is empty."""
-    existing = sheet.row_values(1)
-    if not existing:
+    if not sheet.row_values(1):
         sheet.append_row(HEADERS)
-        print("  📄 Headers added to sheet")
- 
- 
+
+
 def save_to_sheets(sheet, matches: list):
-    """Append new matches to the sheet."""
     print(f"\n📊 Saving {len(matches)} new matches to Google Sheets...")
     for job in matches:
         sheet.append_row([
@@ -183,13 +217,13 @@ def save_to_sheets(sheet, matches: list):
             job["salary"], job["summary"], job["matches"], job["gaps"],
             job["date"], job["url"],
         ])
-    print(f"✅ Saved to sheet — {len(matches)} rows added")
- 
- 
+    print(f"✅ Saved — {len(matches)} rows added to '{SHEET_NAME}'")
+
+
 # ─────────────────────────────────────────────────────────────
 # STEP 1: Fetch jobs from Adzuna India
 # ─────────────────────────────────────────────────────────────
- 
+
 def fetch_jobs(role: str, city: str) -> list:
     print(f"\n🔍 Searching: '{role}' in {city}...")
     url = (
@@ -212,17 +246,14 @@ def fetch_jobs(role: str, city: str) -> list:
     except Exception as e:
         print(f"  ❌ Request failed: {e}")
         return []
- 
- 
-# ─────────────────────────────────────────────────────────────
-# STEP 2: Pre-filter by keyword
-# ─────────────────────────────────────────────────────────────
- 
-def pre_filter(jobs: list, seen_keys: set) -> list:
-    kept = []
-    skipped_seen    = 0
-    skipped_keyword = 0
 
+
+# ─────────────────────────────────────────────────────────────
+# STEP 2: Pre-filter by keyword + dedup
+# ─────────────────────────────────────────────────────────────
+
+def pre_filter(jobs: list, seen_keys: set) -> list:
+    kept, skipped_seen, skipped_keyword = [], 0, 0
     for job in jobs:
         title   = job.get("title", "").strip().lower()
         company = job.get("company", {}).get("display_name", "").strip().lower()
@@ -232,11 +263,9 @@ def pre_filter(jobs: list, seen_keys: set) -> list:
         if key in seen_keys:
             skipped_seen += 1
             continue
-
         if any(kw in text for kw in REJECT_IF_ANY):
             skipped_keyword += 1
             continue
-
         if any(kw in text for kw in MUST_HAVE_ANY):
             kept.append(job)
         else:
@@ -244,12 +273,12 @@ def pre_filter(jobs: list, seen_keys: set) -> list:
 
     print(f"  🔎 Kept {len(kept)} | Skipped {skipped_seen} already seen | {skipped_keyword} irrelevant")
     return kept
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # STEP 3: Score each job with Groq
 # ─────────────────────────────────────────────────────────────
- 
+
 def score_job(job: dict, client: Groq) -> dict | None:
     title       = job.get("title", "N/A")
     company     = job.get("company", {}).get("display_name", "N/A")
@@ -258,24 +287,34 @@ def score_job(job: dict, client: Groq) -> dict | None:
     salary_min  = job.get("salary_min", "")
     salary_max  = job.get("salary_max", "")
     job_url     = job.get("redirect_url", "N/A")
- 
+
     salary = (
         f"INR {int(salary_min):,} - {int(salary_max):,}"
         if salary_min and salary_max else "Not disclosed"
     )
- 
+
     prompt = f"""
-You are a job fit analyst. Compare this candidate's resume to the job posting.
- 
+You are a job fit analyst specialising in automotive functional safety and ADAS roles.
+Compare this candidate's profile to the job posting carefully.
+
 CANDIDATE RESUME:
 {MY_RESUME}
- 
+
 JOB POSTING:
 Title: {title}
 Company: {company}
 Location: {location}
 Description: {description}
- 
+
+Pay special attention to:
+- ISO 26262 experience and certification (TÜV SÜD Level I is a strong differentiator)
+- SOTIF/ISO 21448, ISO 21434 cybersecurity experience
+- ADAS/radar/sensor fusion background
+- Safety analysis methods (HARA, FMEA, FTA, DFA, HAZOP)
+- Safety concept development (FSC, TSC, Safety Case, DIA, Safety Plan)
+- Tools: DOORS, CANoe, MATLAB/Simulink
+- OEM or Tier-1 supplier experience (Daimler, ZF, Bosch, Mercedes)
+
 Return ONLY valid JSON with no markdown, no extra text, no code fences:
 {{
   "score": <integer from 1 to 10>,
@@ -284,7 +323,7 @@ Return ONLY valid JSON with no markdown, no extra text, no code fences:
   "gaps": ["<gap 1>", "<gap 2>"]
 }}
 """
- 
+
     try:
         response = client.chat.completions.create(
             model="openai/gpt-oss-120b",
@@ -298,7 +337,7 @@ Return ONLY valid JSON with no markdown, no extra text, no code fences:
                 raw = raw[4:]
         raw = raw.strip()
         parsed = json.loads(raw)
- 
+
         return {
             "score":    parsed.get("score", 0),
             "title":    title,
@@ -311,31 +350,30 @@ Return ONLY valid JSON with no markdown, no extra text, no code fences:
             "url":      job_url,
             "date":     datetime.now().strftime("%Y-%m-%d"),
         }
- 
+
     except json.JSONDecodeError:
         print(f"    ⚠️  Could not parse response for '{title}'")
         return None
     except Exception as e:
         print(f"    ⚠️  Groq error for '{title}': {e}")
         return None
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # STEP 4: Send daily email digest
 # ─────────────────────────────────────────────────────────────
- 
+
 def score_color(score):
     if score >= 9:   return "#1a7f3c", "#d4edda"
     elif score >= 7: return "#856404", "#fff3cd"
     else:            return "#5a5a5a", "#f0f0f0"
- 
- 
+
+
 def build_email_html(jobs: list, run_stats: dict) -> str:
     today      = datetime.now().strftime("%A, %d %B %Y")
     top_count  = len([j for j in jobs if j["score"] >= 9])
     good_count = len([j for j in jobs if j["score"] >= 7])
- 
-    # Recurring gaps analysis
+
     all_gaps = []
     for j in jobs:
         all_gaps += [g.strip() for g in j["gaps"].split("|")
@@ -344,7 +382,7 @@ def build_email_html(jobs: list, run_stats: dict) -> str:
     for g in all_gaps:
         gap_counts[g] = gap_counts.get(g, 0) + 1
     top_gaps = sorted(gap_counts.items(), key=lambda x: x[1], reverse=True)[:4]
- 
+
     job_rows = ""
     for j in jobs:
         text_color, bg_color = score_color(j["score"])
@@ -376,7 +414,7 @@ def build_email_html(jobs: list, run_stats: dict) -> str:
                   <span style="color:#c0392b;font-weight:600;">✗ </span>
                   <span style="color:#555;">{j["gaps"]}</span>
                 </div>
-                <a href="{j["url"]}" style="background:#0a66c2;color:#fff;
+                <a href="{j["url"]}" style="background:#cc0000;color:#fff;
                    text-decoration:none;padding:6px 14px;border-radius:6px;
                    font-size:12px;font-weight:600;display:inline-block;">
                   View Job →
@@ -385,30 +423,29 @@ def build_email_html(jobs: list, run_stats: dict) -> str:
             </div>
           </td>
         </tr>"""
- 
+
     gap_pills = "".join(
         f'<span style="background:#fff3cd;color:#856404;padding:3px 10px;'
         f'border-radius:12px;font-size:12px;margin:3px;display:inline-block;">'
         f'{g} ({c}×)</span>'
         for g, c in top_gaps
     ) if top_gaps else "<span style='color:#888;font-size:12px;'>No recurring gaps today</span>"
- 
+
     no_new = ""
     if not jobs:
-        no_new = """
-        <tr><td style="padding:32px;text-align:center;color:#888;">
-          No new matches today — all jobs were already seen or scored below threshold.
+        no_new = """<tr><td style="padding:32px;text-align:center;color:#888;">
+          No new matches today — all jobs already seen or scored below threshold.
         </td></tr>"""
- 
+
     return f"""<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <div style="max-width:640px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-    <div style="background:#0a66c2;padding:28px 32px;">
-      <div style="color:#fff;font-size:22px;font-weight:700;">🎯 Your Daily Job Digest</div>
-      <div style="color:#cce0ff;font-size:14px;margin-top:4px;">{today}</div>
+    <div style="background:#cc0000;padding:28px 32px;">
+      <div style="color:#fff;font-size:22px;font-weight:700;">🚗 Sauvik's Daily FuSa Job Digest</div>
+      <div style="color:#ffcccc;font-size:14px;margin-top:4px;">{today}</div>
     </div>
-    <div style="background:#f0f7ff;padding:16px 32px;border-bottom:1px solid #e0ecff;">
+    <div style="background:#fff5f5;padding:16px 32px;border-bottom:1px solid #ffe0e0;">
       <table style="width:100%;"><tr>
         <td style="text-align:center;">
           <div style="font-size:28px;font-weight:700;color:#1a7f3c;">{top_count}</div>
@@ -423,14 +460,14 @@ def build_email_html(jobs: list, run_stats: dict) -> str:
           <div style="font-size:12px;color:#555;">New today</div>
         </td>
         <td style="text-align:center;">
-          <div style="font-size:28px;font-weight:700;color:#333;">{run_stats.get('total_seen', 0)}</div>
+          <div style="font-size:28px;font-weight:700;color:#333;">{run_stats.get("total_seen", 0)}</div>
           <div style="font-size:12px;color:#555;">All-time tracked</div>
         </td>
       </tr></table>
     </div>
     <div style="padding:16px 32px;background:#fffdf0;border-bottom:1px solid #f0e8c0;">
       <div style="font-size:12px;font-weight:600;color:#856404;margin-bottom:6px;">
-        ⚠️ Recurring skill gaps — worth adding to your resume:
+        ⚠️ Recurring skill gaps across roles:
       </div>
       {gap_pills}
     </div>
@@ -438,49 +475,48 @@ def build_email_html(jobs: list, run_stats: dict) -> str:
       {job_rows}{no_new}
     </table>
     <div style="padding:20px 32px;background:#f9f9f9;border-top:1px solid #eee;font-size:12px;color:#999;text-align:center;">
-      Sent by your India Job Agent · Adzuna + Groq · {today}
+      Sauvik's Job Agent · Adzuna + Groq · {today}
     </div>
   </div>
 </body>
 </html>"""
- 
- 
+
+
 def send_email(jobs: list, recipients: list, run_stats: dict):
     if not GMAIL_ADDRESS or not GMAIL_APP_PASS:
-        print("⚠️  Email skipped — YOUR_EMAIL or EMAIL_PASSWORD not set in .env")
+        print("⚠️  Email skipped — credentials not set in .env")
         return
- 
+
     today   = datetime.now().strftime("%d %b %Y")
-    subject = f"🎯 India Job Digest — {len(jobs)} new matches · {today}"
+    subject = f"🚗 Sauvik's FuSa Job Digest — {len(jobs)} new matches · {today}"
     html    = build_email_html(jobs, run_stats)
- 
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"]    = GMAIL_ADDRESS
     msg["To"]      = ", ".join(recipients)
     msg.attach(MIMEText(html, "html"))
- 
+
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(GMAIL_ADDRESS, GMAIL_APP_PASS)
             server.sendmail(GMAIL_ADDRESS, recipients, msg.as_string())
         print(f"📧 Email sent to: {', '.join(recipients)}")
     except smtplib.SMTPAuthenticationError:
-        print("❌ Gmail auth failed — check your App Password in .env")
+        print("❌ Gmail auth failed — check EMAIL_PASSWORD in .env")
     except Exception as e:
         print(f"❌ Email failed: {e}")
- 
- 
+
+
 # ─────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────
- 
+
 def main():
-    print("=" * 50)
-    print("  India Job Agent  (Groq + dedup + email)")
-    print("=" * 50)
- 
-    # Connect to sheet once — reuse throughout
+    print("=" * 55)
+    print("  Sauvik's Job Agent  (FuSa / ADAS / Systems Safety)")
+    print("=" * 55)
+
     print("\n🔗 Connecting to Google Sheets...")
     try:
         sheet = get_sheet()
@@ -488,14 +524,10 @@ def main():
     except Exception as e:
         print(f"❌ Could not connect to Google Sheets: {e}")
         return
- 
-    # Load already-seen URLs to avoid duplicates
-    seen_keys  = get_seen_job_keys(sheet)
- 
-    # Init Groq
+
+    seen_keys   = get_seen_job_keys(sheet)
     groq_client = Groq(api_key=GROQ_API_KEY)
- 
-    # Fetch all jobs
+
     all_jobs = []
     seen_ids = set()
     for role in ROLES:
@@ -506,22 +538,19 @@ def main():
                 if job_id not in seen_ids:
                     seen_ids.add(job_id)
                     all_jobs.append(job)
- 
+
     if not all_jobs:
         print("\nNo jobs fetched. Check Adzuna keys.")
         return
- 
-    # Pre-filter: remove seen + irrelevant
+
     fresh_jobs = pre_filter(all_jobs, seen_keys)
     print(f"\n📥 {len(all_jobs)} fetched → {len(fresh_jobs)} fresh jobs to score")
- 
+
     if not fresh_jobs:
         print("No new jobs to score today.")
-        run_stats = {"total_seen": len(seen_urls)}
-        send_email([], EMAIL_TO, run_stats)
+        send_email([], EMAIL_TO, {"total_seen": len(seen_keys)})
         return
- 
-    # Score with Groq
+
     print(f"\n🤖 Scoring {len(fresh_jobs)} jobs with Groq...")
     scored = []
     for i, job in enumerate(fresh_jobs):
@@ -531,29 +560,26 @@ def main():
         if result:
             scored.append(result)
         time.sleep(GROQ_DELAY)
- 
-    # Filter by min score
+
     top = sorted(
         [j for j in scored if j["score"] >= MIN_SCORE],
         key=lambda x: x["score"],
         reverse=True,
     )
- 
+
     print(f"\n🎯 {len(top)} jobs scored {MIN_SCORE}+/10:")
     for j in top:
         print(f"  [{j['score']}/10] {j['title']} @ {j['company']} ({j['location']})")
         print(f"         {j['summary']}")
- 
-    # Save to sheet
+
     if top:
         save_to_sheets(sheet, top)
- 
-    # Send email (even if no new matches — keeps the daily habit)
-    run_stats = {"total_seen": len(seen_urls) + len(top)}
+
+    run_stats = {"total_seen": len(seen_keys) + len(top)}
     send_email(top, EMAIL_TO, run_stats)
- 
+
     print("\n✅ Agent finished.")
- 
- 
+
+
 if __name__ == "__main__":
     main()

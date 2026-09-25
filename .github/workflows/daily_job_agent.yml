@@ -41,3 +41,6 @@ jobs:
       # 6. Run the agent
       - name: Run job agent
         run: python src/job_agent.py
+
+      - name: Run Sauvik's job agent
+        run: python src/job_agent_sauvik.py
